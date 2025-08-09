@@ -1,4 +1,18 @@
+# MCP (Model Context Protocol) dependencies
 mcp>=1.0.0
+
+# HTTP client for async requests
 httpx>=0.25.0
-asyncio
-openpyxl
+
+# Data processing and CSV handling
+pandas>=1.5.0
+openpyxl>=3.1.0
+
+# Additional utilities that might be needed
+aiofiles>=23.0.0
+pydantic>=2.0.0
+typing-extensions>=4.5.0
+
+# For fuzzy matching mentioned in the README
+fuzzywuzzy>=0.18.0
+python-levenshtein>=0.21.0

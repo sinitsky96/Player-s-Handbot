@@ -1,84 +1,145 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance for Claude Code when working with the Player's Handbot codebase.
 
 ## Project Overview
 
-Player's Handbot is a D&D 5e MCP (Model Context Protocol) server that provides AI agents access to comprehensive D&D data through integration with 5e.tools and the MSRP (Merchant's Sorcerous Rarities Pricelist). The server specifically excludes 2014 PHB content to focus on current game rules.
+Player's Handbot is a Model Context Protocol (MCP) server that provides AI agents with comprehensive D&D 5e data access. It integrates 5e.tools content with MSRP (Merchant's Sorcerous Rarities Pricelist) pricing data while explicitly excluding 2014 PHB content to focus on current game rules.
 
-## Key Commands
+## Development Commands
 
-### Running the MCP Server
+### Server Operations
 ```bash
+# Run the MCP server
 python dnd_mcp_server.py
-```
 
-### Testing individual components
-```bash
-# Test MSRP data loading
-python msrp_loader.py
-
-# Test 5e.tools client functionality  
-python dnd_5etools_fetcher.py
-```
-
-### Installing dependencies
-```bash
+# Install all dependencies
 pip install -r requirements.txt
 ```
 
-## Architecture
+### Component Testing
+```bash
+# Test MSRP pricing data loader
+python msrp_loader.py
 
-### Core Components
+# Test 5e.tools data fetcher
+python dnd_5etools_fetcher.py
+```
 
-1. **dnd_mcp_server.py** - Main MCP server that orchestrates all D&D data access
-   - Implements MCP protocol with 20+ tools for D&D content
-   - Handles tool routing and response formatting
-   - Integrates pricing data with game content
+## Core Architecture
 
-2. **dnd_5etools_fetcher.py** - Client for 5e.tools GitHub data
-   - Fetches D&D content from 5e.tools-mirror-3 repository
-   - Handles caching, filtering, and data normalization
-   - Excludes 2014 PHB content across all data types
+### Primary Components
 
-3. **msrp_loader.py** - MSRP pricing data loader
-   - Parses CSV file with magic item pricing
-   - Provides fuzzy matching for item names
-   - Normalizes item names for consistent lookups
+**`dnd_mcp_server.py`** - Main MCP server implementation
+- Implements MCP protocol with 20+ D&D content tools
+- Orchestrates data flow between components
+- Handles tool routing and response formatting
+- Integrates MSRP pricing with game content
 
-### Data Flow
+**`dnd_5etools_fetcher.py`** - 5e.tools data client
+- Fetches D&D content from 5e.tools-mirror-3 GitHub repository
+- Implements session-duration HTTP caching
+- Filters out 2014 PHB content across all data types
+- Normalizes and structures raw JSON data
 
-1. Server initialization loads MSRP pricing data from CSV
-2. FiveEToolsClient is instantiated with MSRP data for cross-referencing
-3. Tool calls route through the server to appropriate data sources
-4. Results combine 5e.tools content with MSRP pricing when available
+**`msrp_loader.py`** - MSRP pricing integration
+- Parses CSV pricing data with pandas/openpyxl
+- Implements fuzzy string matching for item names
+- Normalizes item names for consistent lookups
+- Provides pricing fallbacks and error handling
 
-### Tool Categories
+### Data Flow Architecture
 
-- **Spells** - Search, list, and get details for spells (excluding 2014 PHB)
-- **Monsters** - Monster Manual bestiary data with CR and type filtering  
-- **Character Options** - Races, classes, subclasses, backgrounds, feats
-- **Equipment** - Magic items and mundane equipment with MSRP pricing
-- **Rules** - Conditions, diseases, and rule references
+1. **Initialization**: Server loads MSRP pricing data from CSV file
+2. **Client Setup**: FiveEToolsClient instantiated with MSRP cross-reference data
+3. **Request Routing**: MCP tool calls route through server to appropriate data sources
+4. **Response Assembly**: Results combine 5e.tools content with MSRP pricing when available
+5. **Caching**: HTTP responses cached for session duration to improve performance
 
-### Key Features
+## Tool Categories
 
-- **Content Filtering**: All tools exclude 2014 PHB content by design
-- **Pricing Integration**: Magic items include MSRP pricing when available
-- **Fuzzy Matching**: Item lookups handle variations in naming
-- **Data Completeness Tracking**: Results indicate which data sources were used
-- **Caching**: HTTP responses cached for session duration
+### Character Creation Tools
+- **Spells**: `get_spell_list_2024`, `get_spell_details_2024`, `search_spells_2024`
+- **Races**: `get_race_list`, `get_race_details`, `search_races`
+- **Classes**: `get_class_list`, `get_class_details`, `get_subclass_list`, `search_classes`
+- **Backgrounds**: `get_background_list`, `get_background_details`, `search_backgrounds`
+- **Feats**: `get_feat_list`, `get_feat_details`, `search_feats`
 
-### Dependencies
+### Equipment Tools
+- **Equipment**: `get_equipment_list`, `get_equipment_details`
+- **Magic Items**: `get_magic_item_list`, `get_magic_item_details`
 
-- `mcp>=1.0.0` - Model Context Protocol implementation
-- `httpx>=0.25.0` - Async HTTP client for 5e.tools data fetching
-- `asyncio` - Async programming support
-- `openpyxl` - Excel file parsing (for MSRP data)
-- `pandas` - Data manipulation for CSV processing
+### Game Master Tools
+- **Monsters**: `get_monster_list_5etools`, `get_monster_details_5etools`, `search_monsters_5etools`
+- **Rules**: `get_conditions_list`, `get_condition_details`, `search_rules`
 
-### File Structure
+## Key Implementation Features
 
-- `"Merchant's Sorcerous Rarities Pricelist (MSRP) - Full.csv"` - Pricing data source
-- `requirements.txt` - Python dependencies
-- `README.md` - Basic project information
+### Content Filtering Strategy
+- All tools automatically exclude 2014 PHB content by design
+- Filter applied at data source level, not post-processing
+- Ensures consistency across all tool responses
+
+### MSRP Pricing Integration
+- Magic items automatically include MSRP pricing when available
+- Fuzzy matching handles variations in item naming conventions
+- Pricing data gracefully degrades when matches aren't found
+
+### Performance Optimizations
+- HTTP response caching for 5e.tools API calls
+- Lazy loading of large datasets
+- Efficient fuzzy matching algorithms
+
+### Error Handling
+- Graceful degradation when external APIs are unavailable
+- Comprehensive logging for debugging
+- User-friendly error messages through MCP protocol
+
+## Dependencies Management
+
+### Core Dependencies
+```python
+mcp>=1.0.0              # Model Context Protocol implementation
+httpx>=0.25.0            # Async HTTP client for API requests
+pandas>=1.5.0            # Data manipulation and CSV processing
+openpyxl>=3.1.0          # Excel file parsing support
+```
+
+### Utility Dependencies
+```python
+aiofiles>=23.0.0         # Async file operations
+pydantic>=2.0.0          # Data validation and serialization
+typing-extensions>=4.5.0 # Type hints for older Python versions
+fuzzywuzzy>=0.18.0       # Fuzzy string matching
+python-levenshtein>=0.21.0 # String distance calculations
+```
+
+## File Structure & Data Sources
+
+### Required Files
+- `"Merchant's Sorcerous Rarities Pricelist (MSRP) - Full.csv"` - Community pricing data
+- `requirements.txt` - Python package dependencies
+- `README.md` - User-facing documentation
+- `CLAUDE.md` - This development guide
+
+### External Data Sources
+- **5e.tools-mirror-3 GitHub**: Live D&D content repository
+- **MSRP CSV**: Community-maintained magic item pricing
+
+## Development Guidelines
+
+### Code Style
+- Follow async/await patterns for HTTP operations
+- Use type hints for better code maintainability
+- Implement proper error handling for all external API calls
+
+### Testing Strategy
+- Test individual components in isolation
+- Verify MCP protocol compliance
+- Validate data filtering (2014 PHB exclusion)
+- Test MSRP pricing integration accuracy
+
+### Performance Considerations
+- Minimize API calls through effective caching
+- Use efficient data structures for lookups
+- Implement lazy loading for large datasets
